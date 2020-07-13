@@ -4,7 +4,7 @@ import {
   MeshBasicMaterial,
   Scene,
   SphereBufferGeometry,
-  // Vector3,
+  Vector3,
 } from 'three/build/three.module';
 
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter';
@@ -20,18 +20,49 @@ const SHAPE_TYPES = {
   sphere: DEFAULT_SPHERE_GEOMETRY,
 };
 
-function convertPointToMesh(point = [], opts = {}) {
+class XYZLoader {
+  static parse(fileBuffer) {
+    // from '1 2 3\n4 5 6\n'
+    // into ['1 2 3', '4 5 6']
+    const content = fileBuffer.toString().trim().split('\n');
+
+    // convert space-separated numbers into its own element in an array
+    // from ['1 2 3', '4 5 6']
+    // into [['1', '2', '3'], ['4', '5', '6']]
+    const lines = content.map((line) => line.trim().split(' '));
+
+    // convert each number on a line from a string into a Number
+    // from [['1', '2', '3'], ['4', '5', '6']]
+    // into [[1, 2, 3], [4, 5, 6]]
+    const points = lines.map((line) => line.map((numberStr) => Number(numberStr)));
+
+    // convert [[x, y, z]...] into [Vector3(x, y, z)...]
+    const pointsVec = points.map((point) => new Vector3().fromArray(point));
+
+    return pointsVec;
+  }
+}
+
+function convertPointToGeometry(point, opts = {}) {
   const {
-    color = DEFAULT_COLOR,
     geometryInstance = DEFAULT_GEOMETRY,
     polygonScale = DEFAULT_SCALE,
   } = opts;
 
-  const material = new MeshBasicMaterial({ color });
   const geometry = geometryInstance.clone();
 
   geometry.scale(polygonScale, polygonScale, polygonScale);
-  geometry.translate(point[0], point[1], point[2]);
+  geometry.translate(point.x, point.y, point.z);
+
+  return geometry;
+}
+
+function createMeshFromGeometry(geometry, opts = {}) {
+  const {
+    color = DEFAULT_COLOR,
+  } = opts;
+
+  const material = new MeshBasicMaterial({ color });
 
   // TODO: Move to a test (ensure center of the shape == point.xyz)
   // const center = new Vector3();
@@ -63,7 +94,8 @@ function createSceneFromPoints(points = [], config) {
   };
 
   const scene = new Scene();
-  const meshes = points.map((point) => convertPointToMesh(point, opts));
+  const pointsGeo = points.map((point) => convertPointToGeometry(point, opts));
+  const meshes = pointsGeo.map((geometry) => createMeshFromGeometry(geometry, opts));
   meshes.forEach((mesh) => scene.add(mesh));
 
   return scene;
@@ -78,6 +110,7 @@ async function exportSceneToOBJ(scene) {
 
 export {
   exportSceneToOBJ,
-  convertPointToMesh,
+  createMeshFromGeometry,
   createSceneFromPoints,
+  XYZLoader,
 };

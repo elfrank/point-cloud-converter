@@ -5,30 +5,13 @@ const { logger } = require('./utils/log');
 const {
   createSceneFromPoints,
   exportSceneToOBJ,
+  XYZLoader,
 } = require('../dist/lib.node');
 
 function getFileBuffer(filePath) {
   const encoding = 'utf8';
 
   return fs.readFileSync(filePath, encoding);
-}
-
-function convertFileBufferIntoPointsArray(fileBuffer) {
-  // from '1 2 3\n4 5 6\n'
-  // into ['1 2 3', '4 5 6']
-  const content = fileBuffer.toString().trim().split('\n');
-
-  // convert space-separated numbers into its own element in an array
-  // from ['1 2 3', '4 5 6']
-  // into [['1', '2', '3'], ['4', '5', '6']]
-  const lines = content.map((line) => line.trim().split(' '));
-
-  // convert each number on a line from a string into a Number
-  // from [['1', '2', '3'], ['4', '5', '6']]
-  // into [[1, 2, 3], [4, 5, 6]]
-  const points = lines.map((line) => line.map((numberStr) => Number(numberStr)));
-
-  return points;
 }
 
 (async () => {
@@ -42,7 +25,7 @@ function convertFileBufferIntoPointsArray(fileBuffer) {
   } = argv;
 
   const fileBuffer = getFileBuffer(inputFile);
-  const points = convertFileBufferIntoPointsArray(fileBuffer);
+  const points = XYZLoader.parse(fileBuffer);
 
   const config = {
     polygonScale,
@@ -59,6 +42,7 @@ function convertFileBufferIntoPointsArray(fileBuffer) {
 
   logger.log('info', loggingMessage);
 
+  // generate THREE.Scene from a list of 3D Points
   const scene = createSceneFromPoints(points, config);
 
   // TODO: support other export formats
