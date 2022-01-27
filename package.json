@@ -20,7 +20,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
-    "three": "0.118.0",
+    "three": "0.137.0",
     "winston": "^3.3.3",
     "yargs": "^15.4.0"
   }
